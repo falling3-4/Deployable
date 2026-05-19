@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Deployable</title>
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <script src="https://unpkg.com/@mercuryworkshop/bare-mux@2.1.9/dist/index.js"></script>
+    <script src="https://unpkg.com/@titaniumnetwork-dev/ultraviolet@3.2.8/dist/uv.bundle.js"></script>
+
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/libcurl.js@0.7.1/libcurl.js"
+      onload="
+        libcurl.load_wasm(
+          'https://cdn.jsdelivr.net/npm/libcurl.js@0.7.1/libcurl.wasm',
+        )
+      "
+    ></script>
+
+    <script>
+      document.addEventListener("libcurl_load", () => {
+        console.log("✅ libcurl.js and WASM engine are fully loaded!");
+      });
+    </script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
