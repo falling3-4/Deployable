@@ -5,27 +5,41 @@ const app = document.getElementById("app");
 const base = new URL("./", location.href).pathname;
 const PREFIX = base + "uv/service/";
 
+const DEFAULT_WISP = "wss://anura.pro/";
+const WISP_STORAGE_KEY = "deployable.wispServer";
+
+const getWispServer = () =>
+  localStorage.getItem(WISP_STORAGE_KEY) || DEFAULT_WISP;
+const setWispServer = (url: string) =>
+  localStorage.setItem(WISP_STORAGE_KEY, url);
+
 let currentUrl = "";
 let history: string[] = [];
 let index = -1;
+let bareMuxConnection: any = null;
+
+async function applyTransport(wispUrl: string) {
+  if (!bareMuxConnection) return;
+  await bareMuxConnection.setTransport(
+    "https://unpkg.com/@mercuryworkshop/libcurl-transport@1/dist/index.mjs",
+    [
+      {
+        websocket: wispUrl,
+        wasm: "https://unpkg.com/libcurl.js/libcurl.wasm",
+      },
+    ],
+  );
+}
 
 async function init() {
   await navigator.serviceWorker.register("pingas.js");
   await navigator.serviceWorker.ready;
 
-  const connection = new (window as any).BareMux.BareMuxConnection(
+  bareMuxConnection = new (window as any).BareMux.BareMuxConnection(
     base + "bare-mux-worker.js",
   );
 
-  await connection.setTransport(
-    "https://unpkg.com/@mercuryworkshop/libcurl-transport@1/dist/index.mjs",
-    [
-      {
-        websocket: "wss://anura.pro/",
-        wasm: "https://unpkg.com/libcurl.js/libcurl.wasm",
-      },
-    ],
-  );
+  await applyTransport(getWispServer());
 }
 
 const startPageHTML = `
@@ -145,8 +159,24 @@ if (app) {
       <button id="home-btn" title="Home">&#8962;</button>
       <input id="url-bar" placeholder="Enter URL or search..." autocomplete="off" />
       <button id="go-btn">Go</button>
+      <button id="settings-btn" title="Settings" aria-label="Settings">&#9881;</button>
     </div>
     <iframe id="proxy-frame"></iframe>
+    <div id="settings-overlay" hidden>
+      <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <h2 id="settings-title">Settings</h2>
+        <label for="wisp-input">Wisp server</label>
+        <input id="wisp-input" type="text" spellcheck="false" autocomplete="off" placeholder="wss://example.com/" />
+        <p class="settings-hint">WebSocket URL used for the proxy transport.</p>
+        <div class="settings-actions">
+          <button id="settings-reset" type="button">Reset</button>
+          <div class="settings-actions-right">
+            <button id="settings-cancel" type="button">Cancel</button>
+            <button id="settings-save" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -274,6 +304,77 @@ init()
     window.addEventListener("message", (event) => {
       if (event.data?.type !== "navigate") return;
       navigate(String(event.data.value || ""));
+    });
+
+    const settingsBtn = document.getElementById(
+      "settings-btn",
+    ) as HTMLButtonElement;
+    const settingsOverlay = document.getElementById(
+      "settings-overlay",
+    ) as HTMLDivElement;
+    const settingsModal = document.getElementById(
+      "settings-modal",
+    ) as HTMLDivElement;
+    const wispInput = document.getElementById(
+      "wisp-input",
+    ) as HTMLInputElement;
+    const settingsSave = document.getElementById(
+      "settings-save",
+    ) as HTMLButtonElement;
+    const settingsCancel = document.getElementById(
+      "settings-cancel",
+    ) as HTMLButtonElement;
+    const settingsReset = document.getElementById(
+      "settings-reset",
+    ) as HTMLButtonElement;
+
+    const openSettings = () => {
+      wispInput.value = getWispServer();
+      settingsOverlay.hidden = false;
+      wispInput.focus();
+      wispInput.select();
+    };
+
+    const closeSettings = () => {
+      settingsOverlay.hidden = true;
+    };
+
+    const saveSettings = async () => {
+      const value = wispInput.value.trim();
+      if (!value) return;
+      try {
+        const parsed = new URL(value);
+        if (parsed.protocol !== "ws:" && parsed.protocol !== "wss:") {
+          wispInput.focus();
+          return;
+        }
+      } catch {
+        wispInput.focus();
+        return;
+      }
+      setWispServer(value);
+      await applyTransport(value);
+      closeSettings();
+    };
+
+    settingsBtn.onclick = openSettings;
+    settingsCancel.onclick = closeSettings;
+    settingsSave.onclick = saveSettings;
+    settingsReset.onclick = () => {
+      wispInput.value = DEFAULT_WISP;
+      wispInput.focus();
+    };
+
+    settingsOverlay.addEventListener("click", (e) => {
+      if (e.target === settingsOverlay) closeSettings();
+    });
+
+    settingsModal.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeSettings();
+      if (e.key === "Enter" && document.activeElement === wispInput) {
+        e.preventDefault();
+        saveSettings();
+      }
     });
 
     load(frame, urlBar, homeDataURL, true, true);
