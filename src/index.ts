@@ -471,7 +471,7 @@ async function loadGames(query = "", category = "", page = 1) {
       limit: 30,
     };
 
-    if (query.trim()) opts.search = query.trim();
+    if (query.trim()) opts.q = query.trim();
     if (category) opts.category = category;
 
     const { games, pages } = await (window as any).Lumin.getGames(opts);
@@ -482,7 +482,7 @@ async function loadGames(query = "", category = "", page = 1) {
     prevPageBtn.disabled = currentPage <= 1;
     nextPageBtn.disabled = currentPage >= totalPages;
 
-    const categories = await (window as any).Lumin.getCategories();
+    const { categories } = await (window as any).Lumin.getCategories();
     renderCategories(categories);
 
     const images = await Promise.all(

@@ -22,7 +22,6 @@ body {
   flex-direction: column;
 }
 
-/* Main Navigation */
 #main-nav {
   display: flex;
   align-items: center;
@@ -83,7 +82,6 @@ body {
   background: #1a1a1a;
 }
 
-/* View Stack */
 #view-stack {
   flex: 1;
   display: flex;
@@ -98,7 +96,6 @@ body {
   overflow: hidden;
 }
 
-/* Web View Styles */
 #tab-bar {
   display: flex;
   align-items: center;
@@ -128,7 +125,9 @@ body {
   cursor: pointer;
   max-width: 200px;
   min-width: 100px;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
   user-select: none;
   white-space: nowrap;
 }
@@ -252,7 +251,6 @@ body {
   display: block;
 }
 
-/* Games View Styles */
 #games-view {
   background: #111;
   padding: 24px;
@@ -332,9 +330,11 @@ body {
 
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 16px;
   flex: 1;
+  align-content: start;
+  justify-content: center;
 }
 
 .game-card {
@@ -344,6 +344,7 @@ body {
   border: 1px solid #222;
   cursor: pointer;
   transition: transform 0.2s;
+  max-width: 200px;
 }
 
 .game-card:hover {
@@ -364,12 +365,13 @@ body {
 
 .game-info {
   padding: 10px;
+  text-align: center;
 }
 
 .game-name {
   display: block;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -421,7 +423,6 @@ body {
   color: #888;
 }
 
-/* Settings Styles */
 #settings-overlay {
   position: fixed;
   inset: 0;
