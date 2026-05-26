@@ -3,11 +3,9 @@ import { loadGames } from "../games/GamesManager";
 export function initUI(app: HTMLElement) {
   app.innerHTML = `
     <div id="main-nav">
-      <div class="nav-center">
+      <div class="nav-right">
         <button id="nav-web" class="nav-item active">Web</button>
         <button id="nav-games" class="nav-item">Games</button>
-      </div>
-      <div class="nav-right">
         <button id="settings-btn" title="Settings">&#9881;</button>
       </div>
     </div>
@@ -28,6 +26,7 @@ export function initUI(app: HTMLElement) {
       <div id="games-view" class="view-container" style="display: none;">
         <div class="games-header">
           <h1>Games</h1>
+          <p>please don't question ANY of these games. I (the one hosting on this site lrga.space) am not responsible for them.</p>
           <div class="games-search-container">
             <input id="games-search" type="text" placeholder="Search games..." autocomplete="off" />
           </div>
