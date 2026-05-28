@@ -153,6 +153,12 @@ if (app) {
       const settingsBtn = document.getElementById(
         "settings-btn",
       ) as HTMLButtonElement;
+      const arrow = document.getElementById(
+        "arrow",
+      ) as HTMLButtonElement;
+      const nav = document.getElementById(
+        "main-nav",
+      ) as HTMLButtonElement;
       const exportBtn = document.getElementById(
         "export-data",
       ) as HTMLButtonElement;
@@ -183,6 +189,19 @@ if (app) {
       settingsOverlay.onclick = (e) => {
         if (e.target === settingsOverlay)
           settingsOverlay.style.display = "none";
+      };
+      // I know nothing about TypeScript so I'm gonna treat it like JavaScript... And copy the code above me.
+      var open = true;
+      arrow.onclick = () => {
+        if (open === true) {
+          open = false;
+          nav.style.right = "-198px";
+          arrow.innerHTML = "<";
+        } else {
+          open = true;
+          nav.style.right = "10px";
+          arrow.innerHTML = ">";
+        }
       };
 
       exportBtn.onclick = exportData;
