@@ -39,15 +39,6 @@ body {
   transition: all 0.3s ease;
 }
 
-@keyframes rotateArrow {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(180deg);
-  }
-}
-
 .nav-item {
   background: transparent;
   border: none;
