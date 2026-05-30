@@ -1,7 +1,9 @@
 const UV_CDN = "https://unpkg.com/@titaniumnetwork-dev/ultraviolet@3.2.8/dist/";
+const SJ_CDN = "https://unpkg.com/@mercuryworkshop/scramjet@1.1.0/dist/";
 
 importScripts(UV_CDN + "uv.bundle.js");
 importScripts(UV_CDN + "uv.sw.js");
+importScripts(SJ_CDN + "scramjet.all.js");
 
 const base = new URL("./", location.href).pathname;
 
@@ -19,6 +21,40 @@ self.__uv$config = {
 };
 
 const uv = new UVServiceWorker();
+let sjInitialized = false;
+let sj = null;
+async function getSJ() {
+  if (!sj) {
+    const { ScramjetServiceWorker } = $scramjetLoadWorker();
+    sj = new ScramjetServiceWorker();
+  }
+  // console.log(sj);
+  return sj;
+}
+let sjReady = false;
+
+async function sjRequest(event) {
+  try {
+    const s = await getSJ();
+    if (!sjInitialized) {
+      try {
+        await s.loadConfig();
+        sjInitialized = true;
+      } catch (e) {e
+        return new Response(
+          `<p>trying to initialize scramjet...</p>`,
+          { status: 200, headers: { "Content-Type": "text/html" } }
+        );
+      }
+    }
+    if (s.route(event)) {
+      return await s.fetch(event);
+    }
+  } catch (e) {
+    return new Response("scramjet eror: " + e.message, { status: 500 });
+  }
+  return await fetch(event.request);
+}
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) =>
@@ -64,7 +100,7 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
-
+  
   // when it tries to get the other files we fetch from cdn
   if (
     [
@@ -86,13 +122,11 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
-
-  event.respondWith(
-    (async () => {
-      if (uv.route(event)) {
-        return await uv.fetch(event);
-      }
-      return await fetch(event.request);
-    })(),
-  );
+  if (uv.route(event)) {
+      event.respondWith(uv.fetch(event));
+      return;
+  }
+  if (url.pathname.startsWith("/scramjet/")) {
+    event.respondWith(sjRequest(event));
+  }
 });

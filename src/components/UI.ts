@@ -1,4 +1,4 @@
-import { loadGames } from "../games/GamesManager";
+// import { loadGames } from "../games/GamesManager";
 
 export function initUI(app: HTMLElement) {
   app.innerHTML = `
@@ -52,6 +52,14 @@ export function initUI(app: HTMLElement) {
         </div>
 
         <div class="settings-section">
+          <label for="proxy-choice">Proxy</label>
+          <div class="choice-actions">
+            <button id="choice-uv">Ultraviolet</button><button id="choice-scram">Scramjet</button>
+          </div>
+          <p class="settings-hint">Scramjet is newer and is still maintained. There are few reasons to choose Ultraviolet.</p>
+        </div>
+
+        <div class="settings-section">
           <label>Data Management</label>
           <div class="data-actions">
             <button id="export-data" type="button">Export Data</button>
@@ -89,7 +97,7 @@ export function initUI(app: HTMLElement) {
       gamesView.style.display = "flex";
       navWeb.classList.remove("active");
       navGames.classList.add("active");
-      loadGames(gamesSearch.value);
+      // loadGames(gamesSearch.value);
     }
   }
 

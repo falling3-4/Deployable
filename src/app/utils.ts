@@ -1,4 +1,5 @@
 import { DEFAULT_WISP, WISP_STORAGE_KEY } from "./constants";
+import { openDB } from "idb";
 
 export const getWispServer = () =>
   localStorage.getItem(WISP_STORAGE_KEY) || DEFAULT_WISP;
@@ -13,3 +14,13 @@ export const normalizeUrl = (u: string) => {
     return u;
   }
 };
+
+export const proxyFind = async () => {
+  const dbPromise = openDB('SettingsDB', 1, {
+    upgrade(db) {
+      db.createObjectStore('settings');
+    },
+  });
+  const db = await dbPromise;
+  return await db.get('settings', 'deployable.proxy');
+}

@@ -5,4 +5,5 @@ export interface Tab {
   historyIndex: number;
   frame: HTMLIFrameElement;
   tabElement: HTMLElement;
+  sjFrame: any;
 }

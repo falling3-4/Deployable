@@ -4,15 +4,18 @@ import { getWispServer, setWispServer } from "./app/utils";
 import { homeDataURL } from "./components/StartPage";
 import { initUI } from "./components/UI";
 import { createTab, getActiveTab, loadTab } from "./app/TabManager";
-import { loadGames, getGamesState } from "./games/GamesManager";
+// import { loadGames, getGamesState } from "./games/GamesManager";
 import { exportData, importData } from "./app/SettingsManager";
+import { openDB } from 'idb';
+
+export let sj: any = null;
 
 let bareMuxConnection: any = null;
 
 async function applyTransport(wispUrl: string) {
   if (!bareMuxConnection) return; 
   await bareMuxConnection.setTransport(
-    "https://unpkg.com/@mercuryworkshop/libcurl-transport@1/dist/index.mjs",
+    "https://unpkg.com/@mercuryworkshop/libcurl-transport@1.5.2/dist/index.mjs",
     [
       {
         websocket: wispUrl,
@@ -23,7 +26,7 @@ async function applyTransport(wispUrl: string) {
 }
 
 async function init() {
-  await navigator.serviceWorker.register("pingas.js"); // change *this* 
+  await navigator.serviceWorker.register("pingas.js", {scope: "/"}); // change *this* 
   await navigator.serviceWorker.ready;
 
   bareMuxConnection = new (window as any).BareMux.BareMuxConnection(
@@ -31,14 +34,47 @@ async function init() {
   );
 
   await applyTransport(getWispServer());
+  const { ScramjetController } = $scramjetLoadController();
+
+  sj = new ScramjetController({
+    prefix: BASE + "scramjet/",
+    files: { 
+      wasm: "https://unpkg.com/@mercuryworkshop/scramjet@1.1.0/dist/scramjet.wasm.wasm",
+      all: "https://unpkg.com/@mercuryworkshop/scramjet@1.1.0/dist/scramjet.all.js",
+      sync: "https://unpkg.com/@mercuryworkshop/scramjet@1.1.0/dist/scramjet.sync.js"
+    },
+    codec: {
+      encode: (url: any) => encodeURIComponent(url),
+      decode: (url: any) => decodeURIComponent(url),
+    }
+  });
+  sj.init();
 }
+
+const dbPromise = openDB('SettingsDB', 1, {
+  upgrade(db) {
+    db.createObjectStore('settings');
+  },
+});
+
+async function loadProxyChoice() {
+  const db = await dbPromise;
+  const savedProxy = await db.get('settings', 'deployable.proxy');
+  
+  if (savedProxy) {
+    const btn = document.getElementById(savedProxy);
+    if (btn) btn.classList.add('selected');
+  }
+}
+
+loadProxyChoice();
 
 const app = document.getElementById("app");
 
 if (app) {
   initUI(app);
 
-  await (window as any).Lumin.init({ headless: true });
+  // await (window as any).Lumin.init({ headless: true });
 
   init()
     .then(() => {
@@ -122,20 +158,23 @@ if (app) {
       gamesSearch.oninput = () => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-          loadGames(gamesSearch.value);
+          // loadGames(gamesSearch.value);
+          return;
         }, 400);
       };
 
       prevPageBtn.onclick = () => {
-        const { currentPage, selectedCategory } = getGamesState();
-        if (currentPage > 1)
-          loadGames(gamesSearch.value, selectedCategory, currentPage - 1);
+        // const { currentPage, selectedCategory } = getGamesState();
+        // if (currentPage > 1)
+          // loadGames(gamesSearch.value, selectedCategory, currentPage - 1);
+        return;
       };
 
       nextPageBtn.onclick = () => {
-        const { currentPage, totalPages, selectedCategory } = getGamesState();
-        if (currentPage < totalPages)
-          loadGames(gamesSearch.value, selectedCategory, currentPage + 1);
+        // const { currentPage, totalPages, selectedCategory } = getGamesState();
+        // if (currentPage < totalPages)
+          // loadGames(gamesSearch.value, selectedCategory, currentPage + 1);
+        return;
       };
 
       const wispInput = document.getElementById(
@@ -171,6 +210,15 @@ if (app) {
       const settingsOverlay = document.getElementById(
         "settings-overlay",
       ) as HTMLDivElement;
+      const choiceScram = document.getElementById(
+        "choice-scram"
+      ) as HTMLButtonElement;
+      const choiceUv = document.getElementById(
+        "choice-uv"
+      ) as HTMLButtonElement;
+      const choiceBtns = document.querySelectorAll(
+        '.choice-actions button'
+      ) as NodeListOf<HTMLButtonElement>;
 
       settingsBtn.onclick = () => {
         wispInput.value = getWispServer();
@@ -184,6 +232,13 @@ if (app) {
         setWispServer(value);
         await applyTransport(value);
         settingsOverlay.style.display = "none";
+        const activeBtn = document.querySelector('.choice-actions button.selected') as HTMLButtonElement | null;
+        if (activeBtn) {
+          const db = await dbPromise;
+          await db.put('settings', activeBtn.id, 'deployable.proxy');
+          console.log('Settings saved to IndexedDB: deployable.proxy:' + activeBtn.id);
+        }
+        window.location.reload();
       };
       settingsReset.onclick = () => (wispInput.value = DEFAULT_WISP);
       settingsOverlay.onclick = (e) => {
@@ -203,6 +258,23 @@ if (app) {
           arrow.innerHTML = ">";
         }
       };
+
+      async function initProxySelection() {
+        const db = await dbPromise;
+        const storedProxyId = await db.get('settings', 'deployable.proxy');
+
+        choiceBtns.forEach((btn) => {
+          if (btn.id === storedProxyId) {
+            btn.classList.add('selected');
+          }
+
+          btn.addEventListener('click', () => {
+            choiceBtns.forEach((b) => b.classList.remove('selected'));
+            btn.classList.add('selected');
+          });
+        });
+      }
+      initProxySelection();
 
       exportBtn.onclick = exportData;
       importBtn.onclick = () => importInput.click();

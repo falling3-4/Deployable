@@ -1,25 +1,40 @@
 import { Tab } from "./types";
 import { homeDataURL } from "../components/StartPage";
-import { PREFIX } from "./constants";
+import { PREFIX, CURRENT_PROXY } from "./constants";
 import { normalizeUrl } from "./utils";
 import { checkLarp } from "./EasterEgg";
 import logo from "../assets/logo.png";
+import { openDB } from "idb";
+import { sj } from "../index";
+
+const dbPromise = openDB('SettingsDB', 1, {
+  upgrade(db) {
+    db.createObjectStore('settings');
+  },
+});
+const db = await dbPromise;
+async function proxyFind() {
+  return await db.get('settings', 'deployable.proxy');
+}
 
 let tabs: Tab[] = [];
 let activeTab: Tab | null = null;
+let sjFrame;
+let frame;
 
 export function getTabs() { return tabs; }
 export function getActiveTab() { return activeTab; }
 export function setActiveTab(tab: Tab | null) { activeTab = tab; }
 
-export function createTab(url: string = homeDataURL) {
+export async function createTab(url: string = homeDataURL) {
   const framesContainer = document.getElementById("frames-container") as HTMLDivElement;
   const tabBar = document.getElementById("tab-bar") as HTMLDivElement;
   const newTabBtn = document.getElementById("new-tab-btn") as HTMLButtonElement;
   const urlBar = document.getElementById("url-bar") as HTMLInputElement;
 
   const id = Math.random().toString(36).substring(2, 11);
-  const frame = document.createElement("iframe");
+  const sjFrame = sj.createFrame();
+  const frame = sjFrame.frame;
   frame.className = "proxy-frame";
   frame.id = `frame-${id}`;
   framesContainer.appendChild(frame);
@@ -42,6 +57,7 @@ export function createTab(url: string = homeDataURL) {
     historyIndex: -1,
     frame,
     tabElement,
+    sjFrame
   };
 
   tabs.push(tab);
@@ -74,9 +90,13 @@ export function createTab(url: string = homeDataURL) {
         const encodedUrl = frameHref.substring(
           frameHref.indexOf(PREFIX) + PREFIX.length,
         );
-        const decodedUrl = (window as any).Ultraviolet.codec.xor.decode(
-          encodedUrl,
-        );
+        let decodedUrl;
+        if (CURRENT_PROXY === "choice-scram") {
+          const decodedUrl = decodeURIComponent(encodedUrl);
+        }
+        else {
+          const decodedUrl = (window as any).Ultraviolet.codec.xor.decode(encodedUrl);
+        }
         if (decodedUrl && normalizeUrl(decodedUrl) !== normalizeUrl(tab.url)) {
           tab.url = decodedUrl;
           if (activeTab === tab) urlBar.value = decodedUrl;
@@ -158,7 +178,15 @@ export function loadTab(
     tab.frame.src = homeDataURL;
   } else {
     if (activeTab === tab) urlBar.value = url;
-    const encodedUrl = (window as any).Ultraviolet.codec.xor.encode(url);
+    let encodedUrl: string;
+    // console.log(CURRENT_PROXY);
+    if (CURRENT_PROXY === "choice-scram") {
+      encodedUrl = encodeURIComponent(url);
+    }
+    else {
+      encodedUrl = (window as any).Ultraviolet.codec.xor.encode(url);
+    }
+    // console.log(encodedUrl);
     tab.frame.src = PREFIX + encodedUrl;
     checkLarp(url);
   }

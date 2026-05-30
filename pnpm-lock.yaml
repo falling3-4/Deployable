@@ -11,6 +11,9 @@ importers:
       '@mercuryworkshop/scramjet':
         specifier: ^1.1.0
         version: 1.1.0
+      idb:
+        specifier: ^8.0.3
+        version: 8.0.3
     devDependencies:
       copy-webpack-plugin:
         specifier: ^14.0.0
