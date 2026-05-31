@@ -129,4 +129,5 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/scramjet/")) {
     event.respondWith(sjRequest(event));
   }
+  evend.respondWith(fetch(event));
 });
